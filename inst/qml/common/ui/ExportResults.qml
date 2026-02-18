@@ -15,33 +15,40 @@
 // License along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 //
+
 import QtQuick
 import QtQuick.Layouts
 import JASP.Controls
-import JASP.Widgets
-import JASP
 
-Form
+Group
 {
-  info: qsTr("This example shows how to plot a curve.")
+	property alias enabled:			exportSection.enabled
+	property alias showSave:		saveGroup.visible
+	property bool showProbs:		false
 
-  Text
-  {
-      text: qsTr("This example shows how to plot a curve")
-  }
+	id:								exportSection
+	title:							qsTr("Export Results")
+	Group
 
-	IntegerField
 	{
-		info: qsTr("The shape of the parabola is dynamically determined by this number")
+		id:							saveGroup
 
-		name: "a"                      // This will map to options$a in R
-		label: qsTr("Type a number")   // qsTr allows for future translations
+		CheckBox
+		{
+			name:					"Save Dataset"
+			text:					qsTr("Save matched dataset")
+			info:					qsTr("When clicked, the dataset is exported to the specified file path.")
 
-		// We can add some extra control parameters
-		min: -10
-		defaultValue: 1
-		fieldWidth: 50
-		max: 10
+			FileSelector
+			{
+				name:				"savePath"
+				label:				qsTr("Save as")
+				placeholderText:	qsTr("e.g., location/matcheddf.csv")
+				filter:				"*.csv"
+				save:				true
+				fieldWidth:			180 * preferencesModel.uiScale
+				info:				qsTr("The file path for matched dataset")
+			}
+		}
 	}
-
 }

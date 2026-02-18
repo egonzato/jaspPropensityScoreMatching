@@ -20,169 +20,116 @@ import QtQuick.Layouts
 import JASP.Controls
 import JASP.Widgets
 import JASP
+import "./common/ui" as UI
 
 Form
 {
 
-  info: qsTr("This analysis shows you different interface elements of JASP, such as tick marks, text boxes, ... \\
-  Its purpose is pedagogical, and its target audience is that of JASP module developers. \\
-  \\
-  From the technical point of view, the most challenging part of JASP module development is the communication between the QML interface and the R backend. \\
-  Playing with the current JASP analysis while simultaneously inspecting the R code in the files `./inst/qml/Interface.qml` and `./R/examples.R` is a good way to learn how this communication works. \\
-  \\
-  The source code is available at [github.com/jasp-stats/jaspModuleTemplate](https://github.com/jasp-stats/jaspModuleTemplate)")
+  info: qsTr("")
 
   Text
   {
-      text: qsTr("This analysis shows you different interface elements of JASP")
-	  // The qsTr wrapper allows for future translations. As a rule of thumb, you should always use qsTr for any text that will be displayed to the user.
+      text: qsTr("Variables in dataset")
   }
+
+  VariablesForm
+	{
+		preferredHeight: jaspTheme.smallDefaultVariablesFormHeight
+		infoLabel: qsTr("Input")
+		AvailableVariablesList{  name: "allVariablesList" }
+		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Treatment variable") ; singleVariable: true; minLevels: 2}
+		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Confounders")}
+	}
 
 	Group
 	{
-		title: qsTr("Logical controls")
+		title: qsTr("Matching specifics")
 
 		CheckBox
 		{
-			info: qsTr("This is a tick mark that can be used to control the flow of the analysis")
+			info: qsTr("This tick mark defines whether matching will be performed with or without replacement")
 
-			name: "my_tick_mark"
-			label: qsTr("Tick mark")
-
-			// We can add some extra control parameters
-			checked: false // Default value
+			name: "replacement"
+			label: qsTr("Replacement")
+			checked: false
 		}
-
-		RadioButtonGroup
-		{
-			name: "radio_buttons"
-			title: qsTr("Radio buttons")
-
-			RadioButton { value: "one value"; label: qsTr("One"); checked: true } // Single-line definition is also possible
-			RadioButton { value: "another value"; label: qsTr("Another") }
-		}
-	}
-
-	Group
-	{
-		title: qsTr("Other controls")
-
 		DropDown
 		{
-			info: qsTr("This is a dropdown that can be used to select one of a list of options")
+			info: qsTr("This is a dropdown that allows the user to decide which distance to use for the procedure")
 
-			name: "my_dropdown"
-			label: qsTr("Select an option")
-
-			// We can add some extra control parameters
-			values: ["option 1", "option 2", "option 3"]
+			name: "distance_dropdown"
+			label: qsTr("Distance")
+			values: ["Probability", "Logit", "Mahalanobis"]
 		}
-
-		Slider
+		DropDown
 		{
+			info: qsTr("This is a dropdown that allows the user to decide which method to use for the procedure")
 
-			info: qsTr("This is a slider that can be used to select a value in a range")
-
-			name: "my_slider"
-			label: qsTr("Select a value")
-
-			// We can add some extra control parameters
-			min: 0
-			max: 1
-			value: 0.5
-			decimals: 3
-			vertical: false
+			name: "method_dropdown"
+			label: qsTr("Method")
+			values: ["Nearest", "Optimal"]
 		}
-	}
-
-	Group
-	{
-		title: qsTr("Keyboard inputs")
-
 		IntegerField
 		{
-			info: qsTr("This is the number that will be used in the operation")
+			info: qsTr("This is the number that will be used as ratio for matching")
 
-			name: "my_integer"                // This will map to options$my_integer in R
-			label: qsTr("Input an integer")   // qsTr allows for future translations
+			name: "ratio"
+			label: qsTr("Ratio")   
 
-			// We can add some extra control parameters
 			min: 1
-			defaultValue: 10
+			defaultValue: 1
 			fieldWidth: 50
 			max: 1000
 		}
 
 		DoubleField
 		{
-			info: qsTr("This is the number that will be used in the operation")
+			info: qsTr("This is the caliper used in matching. Warning: the caliper is defined as the proportion of the standard deviation of the probability in the untreated group, in the logit scale.")
 
-			name: "my_double"
-			label: qsTr("Input a number with decimals")
+			name: "caliper"
+			label: qsTr("Caliper")
 
-			// We can add some extra control parameters
-			defaultValue: 3.14
+			defaultValue: 0.1
 			fieldWidth: 50
-			max: 5
-			decimals: 2
-		}
-
-		PercentField
-		{
-			info: qsTr("This is the number that will be used in the operation")
-
-			name: "my_percent"
-			label: qsTr("Input a percentage")
-		}
-
-		CIField
-		{
-			info: qsTr("This is the number that will be used in the operation")
-
-			name: "my_ci"
-			label: qsTr("Input a confidence interval")
-		}
-
-		TextField
-		{
-			info: qsTr("This is a text field that can be used to input any text")
-
-			name: "my_text"
-			label: qsTr("Input some text")
-
-			// We can add some extra control parameters
-			fieldWidth: 200
-			defaultValue: qsTr("Hello world!")
+			max: 1
+			decimals: 5
 		}
 	}
 
-	Section
+	Group
 	{
-		title: qsTr("Advanced controls")
+		title: qsTr("Covariate balance")
 
-
-		Group
+		CheckBox
 		{
-			title: qsTr("Subordinate menus")
+			info: qsTr("This tick mark defines whether the summary of the proedure will be displayed or not")
 
-			CheckBox
-			{
+			name: "distance"
+			label: qsTr("Summary distance measures")
 
-				name: "my_advanced_tick_mark"
-				label: qsTr("Activate advanced options?")
-
-				// We can add some extra control parameters
-				checked: false // Default value
-
-				// The tic mark below is only available if the above tick mark is checked
-				CheckBox
-				{ 
-					name: "my_subordinate_tick_mark"
-					label: qsTr("Subordinate tick mark")
-					checked: false // Default value
-				}
-			}
+			checked: true
 		}
+		CheckBox
+		{
+			info: qsTr("Display love plot")
+
+			name: "love"
+			label: qsTr("Love plot")
+
+			checked: true 
+		}
+		CheckBox
+		{
+			info: qsTr("Display distributions of covariates in treated and untreated, before and after matching")
+
+			name: "densitites"
+			label: qsTr("Density plot")
+
+			checked: true
+		}
+	}
+	UI.ExportResults{
+		//enabled: exist(matcheddf)
 	}
 
 }
