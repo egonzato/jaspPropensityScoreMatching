@@ -15,8 +15,6 @@ This module was developed during the first JASP hackathon, in February 2026.
         - Allow performing matching with replacement
     - Confounders
         - Allow non-linear forms in the treatment model
-    - Caliper
-        - Set default to 'NULL' and then let the user decide whether to add it or no
     - Save selected dataset
 
 - Visual

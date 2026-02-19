@@ -8,7 +8,7 @@
     ggplot2::theme(legend.position = 'bottom')
   # create jasp graph
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 300, height = 400)
-  lovePlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown","ratio")) # Refresh view whenever a changes
+  lovePlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown","ratio","replacement")) # Refresh view whenever a changes
   lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
   jaspResults[["lovePlot"]]=lovePlot
   lovePlot$plotObject=loveplotmatched
@@ -65,7 +65,7 @@
   densityGrobs=gridExtra::grid.arrange(col_unmatched, col_matched, ncol = 2)
   # create Jasp object
   densityPlot=createJaspPlot(title = gettext("Density Plot"), width = 300, height = 400)
-  densityPlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown", "ratio"))
+  densityPlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown", "ratio","replacement"))
   densityPlot$info=gettext("This figure displays the distribution of the covariates in treated and untreated groups.")
   jaspResults[["densityPlot"]]=densityPlot
   densityPlot$plotObject=densityGrobs
@@ -80,13 +80,16 @@ matching=function(jaspResults,dataset,options){
                                   stringr::str_to_lower(options$distance_dropdown)=='Logit'~'logit',
                                   T~'mahalanobis')
   # caliper
-  caliper_null = ifelse(options$caliperEnabled, options$caliper, NULL)
+  if (isTRUE(options$caliperEnabled))
+    caliper_null=options$caliper
+  else
+    caliper_null=NULL
   # run matching
   matched=MatchIt::matchit(formula=f,
                            data=dataset,
                            caliper=caliper_null,
                            ratio=options$ratio,
-                           replacement=options$replacement,
+                           replace=options$replacement,
                            distance=distance_lower,
                            method=str_to_lower(options$method_dropdown))
   # density

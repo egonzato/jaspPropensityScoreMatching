@@ -47,12 +47,11 @@ Form
 
 		CheckBox
 		{
-			info: qsTr("This tick mark defines whether matching will be performed with or without replacement")
-
-			name: "replacement"
-			label: qsTr("Replacement")
+			name: "replacement"           // Single boolean option
+			label: qsTr("With replacement")
 			checked: false
 		}
+
 		DropDown
 		{
 			info: qsTr("This is a dropdown that allows the user to decide which distance to use for the procedure")
@@ -86,13 +85,13 @@ Form
 		{
 			name: "caliperEnabled"
 			label: qsTr("Use caliper")
-			checked: false  // Default ON (your current 0.1)
+			checked: false  
 		}
 
 		DoubleField
 		{
-			enabled: caliperEnabled.checked  // Disabled when unchecked
 			name: "caliper"
+			enabled: caliperEnabled.checked 
 			label: qsTr("Caliper width")
 			defaultValue: 0.1
 			fieldWidth: 50
