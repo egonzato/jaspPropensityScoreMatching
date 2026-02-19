@@ -60,8 +60,8 @@
     }
   }
   # create plots
-  col_unmatched=gridExtra::arrangeGrob(grobs = gglist[1:length(covariates)], ncol = 1, nrow = length(covar_types), top = "Original dataset")
-  col_matched=gridExtra::arrangeGrob(grobs = gglist[(length(covariates)+1):length(gglist)], ncol = 1, nrow = length(covar_types), top = "Matched dataset")
+  col_unmatched=gridExtra::arrangeGrob(grobs = gglist[1:length(covariates)], ncol = 1, nrow = length(covar_types), top = paste("Original dataset (n=",dim(dataset)[1],')',sep=''))
+  col_matched=gridExtra::arrangeGrob(grobs = gglist[(length(covariates)+1):length(gglist)], ncol = 1, nrow = length(covar_types), top = paste("Matched dataset (n=",dim(matcheddf)[1],')',sep=''))
   densityGrobs=gridExtra::grid.arrange(col_unmatched, col_matched, ncol = 2)
   # create Jasp object
   densityPlot=createJaspPlot(title = gettext("Density Plot"), width = 300, height = 400)
@@ -79,16 +79,16 @@ matching=function(jaspResults,dataset,options){
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='Logit'~'logit',
                                   T~'mahalanobis')
-  # define caliper for distance
-  #caliper_method=ifelse(distance_lower=='mahalanobis',NULL,options$caliper)
+  # caliper
+  caliper_null = ifelse(options$caliperEnabled, options$caliper, NULL)
   # run matching
   matched=MatchIt::matchit(formula=f,
-                  data=dataset,
-                  caliper=options$caliper,
-                  ratio=options$ratio,
-                  replacement=options$replacement,
-                  distance=distance_lower,
-                  method=str_to_lower(options$method_dropdown))
+                           data=dataset,
+                           caliper=caliper_null,
+                           ratio=options$ratio,
+                           replacement=options$replacement,
+                           distance=distance_lower,
+                           method=str_to_lower(options$method_dropdown))
   # density
   .createDensities(jaspResults,dataset,matched)
   # love plot

@@ -9,14 +9,22 @@ This module was developed during the first JASP hackathon, in February 2026.
 ## To do
 
 - Options
-    - Correctly allow for other distances
-    - Change method to perform search for matches
-    - Other
+    - Distances
+        - Allow user to decide between Probability, Logit and Mahalanobis
+    - Replacement
+        - Allow performing matching with replacement
+    - Confounders
+        - Allow non-linear forms in the treatment model
+    - Caliper
+        - Set default to 'NULL' and then let the user decide whether to add it or no
 
 - Visual
     - Add summary tables of distance measures
     - Change colors according to JASP graph guidelines
     - Define the correct size of images
+
+- Other
+    - Inverse Probability of Treatment Weighting (IPW)
 
 - Fill in README file
 

@@ -82,18 +82,24 @@ Form
 			max: 1000
 		}
 
+		CheckBox
+		{
+			name: "caliperEnabled"
+			label: qsTr("Use caliper")
+			checked: false  // Default ON (your current 0.1)
+		}
+
 		DoubleField
 		{
-			info: qsTr("This is the caliper used in matching. Warning: the caliper is defined as the proportion of the standard deviation of the probability in the untreated group, in the logit scale.")
-
+			enabled: caliperEnabled.checked  // Disabled when unchecked
 			name: "caliper"
-			label: qsTr("Caliper")
-
+			label: qsTr("Caliper width")
 			defaultValue: 0.1
 			fieldWidth: 50
 			max: 1
 			decimals: 5
 		}
+
 	}
 
 	Group
