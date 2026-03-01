@@ -80,10 +80,11 @@ matching=function(jaspResults,dataset,options){
                                   stringr::str_to_lower(options$distance_dropdown)=='Logit'~'logit',
                                   T~'mahalanobis')
   # caliper
-  if (isTRUE(options$caliperEnabled))
+  if (isTRUE(options$caliperEnabled) && distance_lower %in% c("glm", "logit")) {
     caliper_null=options$caliper
-  else
+  } else {
     caliper_null=NULL
+  }
   # run matching
   matched=MatchIt::matchit(formula=f,
                            data=dataset,
