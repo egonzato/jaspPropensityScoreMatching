@@ -6,7 +6,7 @@ df=read.csv("C:\\Users\\P095206\\OneDrive - Amsterdam UMC\\Shared material with 
 match=matchit(trt~age+sex+chol,
               data=df,
               method='nearest',
-              distance='glm',
+              distance='mahalanobis',
               ratio=2,
               replace=F)
 # summary

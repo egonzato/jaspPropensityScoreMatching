@@ -109,31 +109,56 @@ Form
 		CheckBox
 		{
 			info: qsTr("This tick mark defines whether the summary of the proedure will be displayed or not")
-
 			name: "distance"
 			label: qsTr("Summary distance measures")
-
 			checked: true
 		}
 		CheckBox
 		{
 			info: qsTr("Display love plot")
-
 			name: "love"
 			label: qsTr("Love plot")
-
 			checked: true 
 		}
 		CheckBox
 		{
 			info: qsTr("Display distributions of covariates in treated and untreated, before and after matching")
-
 			name: "densitites"
 			label: qsTr("Density plot")
-
 			checked: true
 		}
 	}
+	Group {
+    title: qsTr("Plot colors")
+
+    Column {
+        spacing: 6
+
+        TextField {
+            name: "untreatedColor"
+            label: qsTr("Untreated")
+            defaultValue: "#FF3300"
+            fieldWidth: 70
+        }
+
+        TextField {
+            name: "treatedColor"
+            label: qsTr("Treated")
+            defaultValue: "#0099FF"
+            fieldWidth: 70
+        }
+
+        DoubleField {
+            name: "opacity"
+            label: qsTr("Opacity")
+            defaultValue: 0.7
+            min: 0
+            max: 1
+            decimals: 2
+            fieldWidth: 50
+        }
+    }
+}
 	UI.ExportResults{
 		//enabled: exist(matcheddf)
 	}

@@ -7,7 +7,7 @@
   df=df[, c("Covariate", colnames(sumall))]
   df=df[, -8]
   # Auto table from data.frame
-  table=createJaspTable(title = "Confounders balance before matching")
+  table=createJaspTable(title = gettext("Confounders balance before matching"))
   table$dependOn(c("method_dropdown", "treatment", "confounders",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -24,7 +24,7 @@
   df$Covariate=rownames(summatch)
   df=df[, c("Covariate", colnames(summatch))]
   # Auto table from data.frame
-  table=createJaspTable(title = "Confounders balance after matching")
+  table=createJaspTable(title = gettext("Confounders balance after matching"))
   table$dependOn(c("method_dropdown", "treatment", "confounders",
                  "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -42,7 +42,7 @@
   df$Sample=rownames(sumnn)
   df=df[, c("Sample", colnames(sumnn))]
   # Auto table from data.frame
-  table=createJaspTable(title = "Sample sizes")
+  table=createJaspTable(title = gettext("Sample sizes"))
   table$dependOn(c("method_dropdown", "treatment", "confounders",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -52,77 +52,129 @@
 }
 
 # love plot
-.createLovePlot=function(jaspResults,matched){
+.createLovePlot=function(jaspResults,matched,options){
   # plot
   loveplotmatched=cobalt::love.plot(matched)+
     ggplot2::theme_bw()+
-    ggplot2::scale_color_manual(values = c('#FF3300',"#0099FF"))+
+    ggplot2::scale_color_manual(values = c(options$untreatedColor,options$treatedColor))+
     ggplot2::geom_vline(xintercept = c(-0.1,+0.1),lty=2,col='black')+
     ggplot2::theme(legend.position = 'bottom')
   # create jasp graph
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 500)
-  lovePlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown","ratio","replacement")) # Refresh view whenever a changes
+  lovePlot$dependOn(c("method_dropdown","treatment","confounders",
+                         "distance_dropdown","ratio","replacement"))
   lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
   jaspResults[["lovePlot"]]=lovePlot
   lovePlot$plotObject=loveplotmatched
 }
 # densities
-.createDensities=function(jaspResults,dataset,matched){
+.createDensities=function(jaspResults,dataset,matched,options){
+
+  # helper to extract legend
+  get_legend <- function(myggplot) {
+    tmp <- ggplot2::ggplot_gtable(ggplot2::ggplot_build(myggplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    tmp$grobs[[leg]]
+  }
+
   # define covariates
-  treat=as.character(matched$formula[[2]])
-  covariates=attr(terms(matched$formula), "term.labels")
-  ## types
-  covar_types=sapply(dataset[, covariates, drop = FALSE], function(x) {
-    if (is.numeric(x)) {"continuous"}
-    else {"categorical"}})
-  # define dataset
-  matcheddf=match.data(matched)
-  # define list
-  gglist=list()
-  # plot each one
+  treat = as.character(matched$formula[[2]])
+  covariates = attr(terms(matched$formula), "term.labels")
+
+  # types
+  covar_types = sapply(dataset[, covariates, drop = FALSE], function(x) {
+    if (is.numeric(x)) "continuous" else "categorical"
+  })
+
+  # matched dataset
+  matcheddf = match.data(matched)
+
+  gglist = list()
+  covs = rep(covariates,2)
+  covs_type = rep(covar_types,2)
+
+  # create plots
   for (p in 1:length(rep(covariates,2))) {
-    # plot for both treated and untreated
-    if (p<=length(covariates)){
-      df=dataset
+
+    if (p <= length(covariates)){
+      df = dataset
     } else {
-      df=matcheddf
+      df = matcheddf
     }
-    #
-    covs=rep(covariates,2); covs_type=rep(covar_types,2)
-    #
-    if (covs_type[p]=='continuous'){
-      gglist[[p]]=ggplot2::ggplot(df,aes(x=.data[[covs[p]]],
-                                group=factor(.data[[treat]]),
-                                fill=factor(.data[[treat]]),
-                                alpha=0.3))+
-        ggplot2::geom_density()+
-        ggplot2::guides(alpha='none',fill='none')+
-        ggplot2::scale_fill_manual(values = c('#FF3300',"#0099FF")) +
-        #ggplot2::labs(fill='Treatment')+
+
+
+
+    if (covs_type[p] == 'continuous') {
+
+      gglist[[p]] = ggplot2::ggplot(df,
+                                    aes(x=.data[[covs[p]]],
+                                        group=factor(.data[[treat]]),
+                                        fill=factor(.data[[treat]])))+
+        ggplot2::geom_density(alpha=options$opacity)+
+        ggplot2::scale_fill_manual(values = c(options$untreatedColor,options$treatedColor),
+                                   labels = c("Untreated", "Treated"),
+                                   guide = ggplot2::guide_legend(nrow=1,byrow=T))+
+        ggplot2::guides(alpha='none')+
+        ggplot2::labs(fill="Treatment")+
         ggplot2::theme_bw()
+
     } else {
-      gglist[[p]]=ggplot2::ggplot(df,aes(x=.data[[covs[p]]],
-                                group=factor(.data[[treat]]),
-                                fill=factor(.data[[treat]]),
-                                alpha=0.3))+
-        ggplot2::geom_bar(position='dodge',col='black')+
-        ggplot2::guides(alpha='none',col='none',fill='none')+
-        ggplot2::scale_fill_manual(values = c('#FF3300',"#0099FF")) +
-        #ggplot2::labs(fill='Treatment')+
+
+      gglist[[p]] = ggplot2::ggplot(df,
+                                    aes(x=.data[[covs[p]]],
+                                        group=factor(.data[[treat]]),
+                                        fill=factor(.data[[treat]])))+
+        ggplot2::geom_bar(position='dodge',col='black',alpha=options$opacity)+
+        ggplot2::scale_fill_manual(values = c(options$untreatedColor,options$treatedColor),
+                                   labels = c("Untreated", "Treated"),
+                                   guide = ggplot2::guide_legend(nrow=1,byrow=T))+
+        ggplot2::guides(alpha='none',col='none')+
+        ggplot2::labs(fill="Treatment")+
         ggplot2::theme_bw()
     }
   }
-  # create plots
-  col_unmatched=gridExtra::arrangeGrob(grobs = gglist[1:length(covariates)], ncol = 1, nrow = length(covar_types), top = paste("Original dataset (n=",dim(dataset)[1],')',sep=''))
-  col_matched=gridExtra::arrangeGrob(grobs = gglist[(length(covariates)+1):length(gglist)], ncol = 1, nrow = length(covar_types), top = paste("Matched dataset (n=",dim(matcheddf)[1],')',sep=''))
-  densityGrobs=gridExtra::grid.arrange(col_unmatched, col_matched, ncol = 2)
-  # create Jasp object
-  densityPlot=createJaspPlot(title = gettext("Density Plot"), width = 400, height = 500)
-  densityPlot$dependOn(c("method_dropdown", "treatment", "confounders","distance_dropdown", "ratio","replacement"))
-  densityPlot$info=gettext("This figure displays the distribution of the covariates in treated and untreated groups.")
-  jaspResults[["densityPlot"]]=densityPlot
-  densityPlot$plotObject=densityGrobs
 
+  # extract legend from first plot
+  legend = get_legend(gglist[[1]])
+
+  # remove legends from all plots
+  gglist = lapply(gglist, function(p) p + ggplot2::theme(legend.position="none"))
+
+  # arrange columns
+  col_unmatched = gridExtra::arrangeGrob(
+    grobs = gglist[1:length(covariates)],
+    ncol = 1,
+    nrow = length(covar_types),
+    top = paste("Original dataset (n=", dim(dataset)[1], ')', sep='')
+  )
+
+  col_matched = gridExtra::arrangeGrob(
+    grobs = gglist[(length(covariates)+1):length(gglist)],
+    ncol = 1,
+    nrow = length(covar_types),
+    top = paste("Matched dataset (n=", dim(matcheddf)[1], ')', sep='')
+  )
+
+  plots = gridExtra::arrangeGrob(col_unmatched, col_matched, ncol = 2)
+
+  densityGrobs = gridExtra::arrangeGrob(
+    plots,
+    legend,
+    ncol = 1,
+    heights = c(10,1)
+  )
+
+  # create JASP plot
+  densityPlot = createJaspPlot(title = gettext("Density Plot"), width = 400, height = 500)
+
+  densityPlot$dependOn(c("method_dropdown","treatment","confounders",
+    "distance_dropdown","ratio","replacement","opacity",
+    "untreatedColor","treatedColor"))
+
+  densityPlot$info = gettext("This figure displays the distribution of the covariates in treated and untreated groups.")
+
+  jaspResults[["densityPlot"]] = densityPlot
+  densityPlot$plotObject = densityGrobs
 }
 # matching performer
 matching=function(jaspResults,dataset,options){
@@ -154,7 +206,8 @@ matching=function(jaspResults,dataset,options){
   ## sample sizes
   .createSampleSizeTable(jaspResults, matched, options)
   # density
-  .createDensities(jaspResults,dataset,matched)
+  .createDensities(jaspResults,dataset,matched,options)
   # love plot
-  .createLovePlot(jaspResults,matched)}
+  .createLovePlot(jaspResults,matched,options)
+}
 
