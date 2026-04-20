@@ -1,8 +1,8 @@
-Package: jaspModuleTemplate
+Package: jaspPropensityScoreMethods
 Type: Package
 Title: A module for JASP
 Version: 0.1.0
-Date: 2020-10-15
+Date: 2026-04-18
 Author: JASP Team
 Website: jasp-stats.org
 Maintainer: JASP Team <info@jasp-stats.org>
@@ -19,7 +19,8 @@ Imports:
   cobalt,
   optmatch,
   splines,
-  dplyr
+  dplyr, 
+  ipw
 Suggests:
   testthat
 Remotes:
