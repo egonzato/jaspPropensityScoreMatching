@@ -3,7 +3,7 @@ import JASP.Module
 
 Description
 {
-	name		: "jaspModuleTemplate"
+	name		: "jaspPropensityScoreMethods"
 	title		: qsTr("Propensity Score Methods")
 	description	: qsTr("Examples for module builders")
 	version		: "0.1"
