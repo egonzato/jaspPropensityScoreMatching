@@ -48,11 +48,17 @@
 }
 # propensity score overlap plot
 .createPSOverlapPlot=function(jaspResults, dataset, options) {
-  # define columns needed
-  treatment=options$treatment
-  confounders=options$confounders
   # define formula of the treatment model
-  f=as.formula(paste0(treatment, "~", paste(confounders, collapse = " + ")))
+  if (!is.null(options$customFormula$model) && nchar(options$customFormula$model) > 0) {
+    #Split user input by + and trim spaces
+    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
+    #f=jaspBase::encodeColNames(options$customFormula)
+    f=as.formula(options$customFormula$model)
+  } else {
+    f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
+  }
+  # define columns needed
+  treatment=f[[2]]
   # compute model
   ps_model=glm(f, data = dataset, family = binomial(link = "logit"))
   # predict propensity scores
@@ -158,7 +164,14 @@ iptw=function(jaspResults, dataset, options) {
   if(length(options$confounders) == 0) return()
   if(length(options$treatment) == 0) return()
   # define formula
-  f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse = " + ")))
+  if (!is.null(options$customFormula$model) && nchar(options$customFormula$model) > 0) {
+    #Split user input by + and trim spaces
+    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
+    #f=jaspBase::encodeColNames(options$customFormula)
+    f=as.formula(options$customFormula$model)
+  } else {
+    f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
+  }
   # compute treatment model
   den_model=glm(f, data = dataset, family = binomial(link = "logit"))
   # predict propensity score

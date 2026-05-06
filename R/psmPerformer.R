@@ -185,16 +185,16 @@ matching=function(jaspResults,dataset,options){
   if (length(options$confounders) == 0) return()
   if (length(options$treatment) == 0) return()
   # define formula with custom
-  #if (!is.null(options$customFormula) && nchar(options$customFormula) > 0) {
-    # Split user input by + and trim spaces
-  #  terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
-  #  f=reformulate(termlabels = terms, response = options$treatment)
-  #} else {
-    #f=reformulate(termlabels = options$confounders, response = options$treatment)
-  #}
+  if (!is.null(options$customFormula) && nchar(options$customFormula) > 0) {
+     #Split user input by + and trim spaces
+    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
+    f=as.formula(options$customFormula)
+  } else {
+    f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
+  }
 
   # define formula without custom
-  f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
+  #f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
   #redefine distance to matchit syntax
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='logit'~'logit',
