@@ -40,6 +40,12 @@ For inverse probability of treatment weighting, the following options are availa
 
 ## To do
 
+* Find command to let the formula go from text to R
+
+* Change list of variables from righ option
+
+* Sum up and ask for help
+
 ### Need help
 
 * For psm:
