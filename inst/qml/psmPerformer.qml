@@ -40,24 +40,27 @@ Form
 		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Treatment variable") ; singleVariable: true; minLevels: 2}
 		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Confounders")}
 	}
-	// Group {
-    // title: qsTr("Non-linear specification of the treatment model  (overrides confounders specification)")
-    
-    // TextField {
-    //     name: "customFormula"
-    //     label: qsTr("Specify confounders with R syntax")
-    //     placeholderText: qsTr("e.g., age + I(age^2) + sex + ns(chol,3)")
-    //     fieldWidth: 400
-    //     info: qsTr("Specify non-linear relationship between treatment and confounders")
-    // }
-    
-    // Text {
-    //     text: qsTr("ℹ️ Available variables: ") + "'" + allVariablesList.valueNames.join("', '") + "'"
-    //     font.pointSize: 9
-    //     color: jaspTheme.moderateGray
-    //     wrapMode: Text.WordWrap
-    // }
-	// }
+	// treatment formula
+	Group {
+		Layout.columnSpan: 2
+		title: qsTr("Non-linear specification of the treatment model (overrides confounders specification)")
+
+		TextArea {
+			name: "customFormula"
+			Layout.preferredWidth: 500*jaspTheme.uiScale
+			Layout.preferredHeight: 100*jaspTheme.uiScale
+			textType: JASP.TextTypeRcode
+			showLineNumber: true
+		}
+
+		Text {
+			text: qsTr("ℹ️ Available variables: ") + "'" + allVariablesList.valueNames.join("', '") + "'"
+			font.pointSize: 9
+			color: jaspTheme.moderateGray
+			wrapMode: Text.WordWrap
+		}
+	}	
+// matching specifics
 	Group
 	{
 		title: qsTr("Matching specifics")
@@ -100,7 +103,7 @@ Form
 		Group {
 			title: qsTr("Caliper (PS only)")
 			enabled: distance_dropdown.currentIndex !== 2
-			visible: controls.distance_dropdown.currentIndex !== 2
+			visible: distance_dropdown.currentIndex !== 2
 			CheckBox {
 				name: "caliperEnabled"
 				label: qsTr("Use caliper")

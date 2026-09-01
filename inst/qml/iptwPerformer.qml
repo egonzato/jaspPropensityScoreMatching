@@ -42,25 +42,23 @@ Form
 	}
 	
 	Group {
+		Layout.columnSpan: 2
+		title: qsTr("Non-linear specification of the treatment model (overrides confounders specification)")
 
-    title: qsTr("Non-linear specification of the treatment model  (overrides confounders specification)")
-    
-	TextArea {name: "customFormula"; width: 500*jaspTheme.uiScale ; height: 100*jaspTheme.uiScale; textType: JASP.TextTypeRcode; showLineNumber: true; Layout.columnSpan: 2}
-    
-	// TextField {
-    //     name: "customFormula"
-    //     label: qsTr("Specify confounders with R syntax")
-    //     placeholderText: qsTr("e.g., age + I(age^2) + sex + ns(chol,3)")
-    //     fieldWidth: 400
-    //     info: qsTr("Specify non-linear relationship between treatment and confounders")
-    // }
-    
-    Text {
-        text: qsTr("ℹ️ Available variables: ") + "'" + allVariablesList.valueNames.join("', '") + "'"
-        font.pointSize: 9
-        color: jaspTheme.moderateGray
-        wrapMode: Text.WordWrap
-    }
+		TextArea {
+			name: "customFormula"
+			Layout.preferredWidth: 500*jaspTheme.uiScale
+			Layout.preferredHeight: 100*jaspTheme.uiScale
+			textType: JASP.TextTypeRcode
+			showLineNumber: true
+		}
+
+		Text {
+			text: qsTr("ℹ️ Available variables: ") + "'" + allVariablesList.valueNames.join("', '") + "'"
+			font.pointSize: 9
+			color: jaspTheme.moderateGray
+			wrapMode: Text.WordWrap
+		}
 	}
 	
 	Group{

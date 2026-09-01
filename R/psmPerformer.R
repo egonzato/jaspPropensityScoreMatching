@@ -9,7 +9,7 @@
   df=df[, -8]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance before matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -26,7 +26,7 @@
   df=df[, c("Covariate", colnames(summatch))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance after matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
                  "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -43,7 +43,7 @@
   df=df[, c("Sample", colnames(sumnn))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Sample sizes"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -60,7 +60,7 @@
     ggplot2::theme(legend.position = 'bottom')
   # create jasp graph
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 500)
-  lovePlot$dependOn(c("method_dropdown","treatment","confounders",
+  lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula",
                          "distance_dropdown","ratio","replacement"))
   lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
   jaspResults[["lovePlot"]]=lovePlot
@@ -78,7 +78,7 @@
 
   # define covariates
   treat = as.character(matched$formula[[2]])
-  covariates = attr(terms(matched$formula), "term.labels")
+  covariates = all.vars(delete.response(terms(matched$formula)))
 
   # types
   covar_types = sapply(dataset[, covariates, drop = FALSE], function(x) {
@@ -171,7 +171,7 @@
   densityPlot = createJaspPlot(title = gettext("Density Plot"), width = 400, height = 500)
 
   densityPlot$dependOn(c("method_dropdown","treatment","confounders",
-    "distance_dropdown","ratio","replacement","opacity",
+    "distance_dropdown","ratio","replacement","opacity","customFormula",
     "untreatedColor","treatedColor"))
 
   densityPlot$info = gettext("This figure displays the distribution of the covariates in treated and untreated groups.")
@@ -182,19 +182,19 @@
 
 # matching performer
 matching=function(jaspResults,dataset,options){
-  if (length(options$confounders) == 0) return()
   if (length(options$treatment) == 0) return()
-  # define formula with custom
-  if (!is.null(options$customFormula) && nchar(options$customFormula) > 0) {
-     #Split user input by + and trim spaces
-    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
-    f=as.formula(options$customFormula)
+  hasCustom = !is.null(options$customFormula$model) && nchar(trimws(options$customFormula$model)) > 0
+  if (length(options$confounders) == 0 && !hasCustom) return()
+  # define formula, with custom override
+  if (hasCustom) {
+    f = tryCatch(as.formula(options$customFormula$model), error = function(e) e)
+    if (inherits(f, "error")) {
+      jaspResults$setError(gettextf("Could not parse the custom formula: %s", f$message))
+      return()
+    }
   } else {
     f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
   }
-
-  # define formula without custom
-  #f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
   #redefine distance to matchit syntax
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='logit'~'logit',

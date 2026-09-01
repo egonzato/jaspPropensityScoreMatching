@@ -1,6 +1,28 @@
+# solve based on how formula is pointed out
+.resolveTreatmentModel = function(options) {
+  hasCustom = !is.null(options$customFormula$model) &&
+    nchar(trimws(options$customFormula$model)) > 0
+
+  if (hasCustom) {
+    f = tryCatch(as.formula(options$customFormula$model), error = function(e) e)
+    if (inherits(f, "error")) {
+      return(list(error = gettextf("Could not parse the custom formula: %s", f$message)))
+    }
+    treatment  = all.vars(f[[2]])                       # LHS variable name
+    covariates = all.vars(delete.response(terms(f)))    # RHS variable names, stripped of ns()/I()/etc.
+  } else {
+    treatment  = options$treatment
+    covariates = options$confounders
+    f = as.formula(paste0(treatment, "~", paste(covariates, collapse = " + ")))
+  }
+
+  list(formula = f, treatment = treatment, covariates = covariates, error = NULL)
+}
 # density of weights plot
 .createIptwDensities=function(jaspResults, dataw, options) {
-  treatment=options$treatment
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
   # add treatment column to dataset with factor format
   dataw$treatment_label=factor(dataw[[treatment]],
                                levels = c(0, 1),
@@ -18,19 +40,21 @@
     ggplot2::theme(legend.position = "bottom")
   # create JASP plot
   weightPlot=createJaspPlot(title = "Weight Densities", width = 400, height = 300)
-  weightPlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "opacity", "untreatedColor", "treatedColor"))
+  weightPlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "customFormula",
+                        "opacity", "untreatedColor", "treatedColor"))
   weightPlot$plotObject=p
   jaspResults[["weightDensities"]]=weightPlot
 }
 # love plot
 .createIptwLovePlot=function(jaspResults, dataset, options) {
-  # define columns needed
-  treatment=options$treatment
-  confounders=options$confounders
-  w=dataset$weight
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
+  f = model$formula
+  w = dataset$weight
   # calculate standardized means for both groups and plot with ggplot
   loveplot=cobalt::love.plot(data=dataset,
-                             x=as.formula(paste0(treatment, "~", paste(confounders, collapse = " + "))),
+                             x=f,
                              weights=w,
                              binary="std",
                              un=TRUE,
@@ -41,24 +65,17 @@
     ggplot2::theme(legend.position = "bottom")
   # create JASP plot
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 400)
-  lovePlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled",
+  lovePlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled","customFormula",
                       "truncate", "untreatedColor", "treatedColor"))
   lovePlot$plotObject=loveplot
   jaspResults[["iptwLovePlot"]]=lovePlot
 }
 # propensity score overlap plot
 .createPSOverlapPlot=function(jaspResults, dataset, options) {
-  # define formula of the treatment model
-  if (!is.null(options$customFormula$model) && nchar(options$customFormula$model) > 0) {
-    #Split user input by + and trim spaces
-    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
-    #f=jaspBase::encodeColNames(options$customFormula)
-    f=as.formula(options$customFormula$model)
-  } else {
-    f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
-  }
-  # define columns needed
-  treatment=f[[2]]
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
+  f = model$formula
   # compute model
   ps_model=glm(f, data = dataset, family = binomial(link = "logit"))
   # predict propensity scores
@@ -80,16 +97,18 @@
     ggplot2::theme(legend.position="bottom")
   # create JASP plot
   psPlot=createJaspPlot(title=gettext("Propensity Score Overlap"), width = 400, height = 300)
-  psPlot$dependOn(c("treatment", "confounders", "opacity", "untreatedColor", "treatedColor"))
+  psPlot$dependOn(c("treatment", "confounders", "customFormula","opacity", "untreatedColor", "treatedColor"))
   psPlot$plotObject=p
   jaspResults[["psOverlapPlot"]]=psPlot
 }
 # weight summary table
 .createWeightSummaryTable=function(jaspResults, dataw, options) {
-  # define columns needed
-  treatment=options$treatment
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
+  f = model$formula
+  w = dataw$weight
   treat_col=as.integer(as.character(dataw[[treatment]]))
-  w=dataw$weight
   # compute summary by group
   groups=list(Treated = w[treat_col == 1], Untreated = w[treat_col == 0])
   # calculate quantities of interest
@@ -107,18 +126,20 @@
   df=do.call(rbind, rows)
   # create JASP table
   table=createJaspTable(title = gettext("Weight Summary"))
-  table$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "truncate"))
+  table$dependOn(c("treatment", "confounders", "stabilize", "customFormula","truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["weightSummary"]]=table
 }
 # smd summary table
 .createSMDTable=function(jaspResults, dataset, options) {
   # define columns needed
-  treatment=options$treatment
-  confounders=options$confounders
-  w=dataset$weight
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
+  f = model$formula
+  w = dataset$weight
   # calculate quantities of interest
-  bal=cobalt::bal.tab(x=as.formula(paste0(treatment, "~", paste(confounders, collapse = " + "))),
+  bal=cobalt::bal.tab(x=f,
                       data=dataset,
                       weights=w,
                       un=T,
@@ -131,16 +152,19 @@
   df[, 2:3]=round(df[, 2:3], 3)
   # create JASP table
   table=createJaspTable(title = gettext("Standardized Mean Differences"))
-  table$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "truncate"))
+  table$dependOn(c("treatment", "confounders", "stabilize","customFormula", "truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["smdTable"]]=table
 }
 # effective sample size (ess) table
 .createESSTable=function(jaspResults, dataset, options) {
   # define column needed
-  treatment=options$treatment
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  treatment = model$treatment
+  f = model$formula
+  w = dataset$weight
   treat_num=as.integer(as.character(dataset[[treatment]]))
-  w=dataset$weight
   # calculate ess as ESS = (sum(w))^2 / sum(w^2)
   ess_trt=sum(w[treat_num == 1])^2 / sum(w[treat_num == 1]^2)
   ess_untrt=sum(w[treat_num == 0])^2 / sum(w[treat_num == 0]^2)
@@ -155,29 +179,24 @@
                 check.names=FALSE)
   # create JASP table
   table=createJaspTable(title = gettext("Effective Sample Size"))
-  table$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "truncate"))
+  table$dependOn(c("treatment", "confounders", "stabilize","customFormula", "truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["essTable"]]=table
 }
 # weighting function
 iptw=function(jaspResults, dataset, options) {
-  if(length(options$confounders) == 0) return()
-  if(length(options$treatment) == 0) return()
-  # define formula
-  if (!is.null(options$customFormula$model) && nchar(options$customFormula$model) > 0) {
-    #Split user input by + and trim spaces
-    #terms=trimws(strsplit(options$customFormula, "\\+")[[1]])
-    #f=jaspBase::encodeColNames(options$customFormula)
-    f=as.formula(options$customFormula$model)
-  } else {
-    f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
-  }
+  model = .resolveTreatmentModel(options)
+  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (length(model$treatment) == 0) return()
+  if (length(model$covariates) == 0) return()
+  treatment = model$treatment
+  f = model$formula
   # compute treatment model
   den_model=glm(f, data = dataset, family = binomial(link = "logit"))
   # predict propensity score
   ps=predict(den_model, type = "response")
   # get treatment column
-  trt_col=dataset[[options$treatment]]
+  trt_col=dataset[[treatment]]
   # define weights
   w=ifelse(trt_col==1,
            1/ps,

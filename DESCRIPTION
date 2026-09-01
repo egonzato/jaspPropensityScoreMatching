@@ -6,7 +6,7 @@ Date: 2026-04-18
 Author: JASP Team
 Website: jasp-stats.org
 Maintainer: JASP Team <info@jasp-stats.org>
-Description: Example module showing basic functionality. Use it for inspiration when creating your own module.
+Description: Module that allows to perform causal inference methods, such as matching and weighting, based on propensitys scores metrics, like probability of treatment assignment or Mahalanobis distance.
 License: GPL (>= 2)
 Encoding: UTF-8
 Imports:
