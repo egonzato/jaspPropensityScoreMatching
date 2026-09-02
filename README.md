@@ -38,13 +38,8 @@ For inverse probability of treatment weighting, the following options are availa
 
 * For psm:
 
-  * Gray-out "caliper" when: i) distance is set to "Mahalanobis", ii) method is set to "Optimal"
+  * Gray-out "caliper" when method is set to "Optimal"
   * Save selected dataset
-  
 * For iptw:
 
   * Bootstrapping analysis for iptw standard errors or save dataset
-
-#### Other
-
-* Change label of module (draw confounding)
