@@ -100,27 +100,28 @@ Form
 			fieldWidth: 50
 			max: 1000
 		}
-		Group {
-			title: qsTr("Caliper (PS only)")
-			enabled: distance_dropdown.currentIndex !== 2
-			visible: distance_dropdown.currentIndex !== 2
-			CheckBox {
-				name: "caliperEnabled"
-				label: qsTr("Use caliper")
-				checked: false
-			}
-			
-			DoubleField {
-				name: "caliper"
-				enabled: caliperEnabled.checked
-				label: qsTr("Caliper width")
-				defaultValue: 0.1
-				fieldWidth: 50
-				max: 1
-				decimals: 5
-			}
+	
+	Group {
+		title: qsTr("Caliper")
+
+		CheckBox {
+			name: "caliperEnabled"
+			label: qsTr("Use caliper")
+			checked: false
+		}
+
+		DoubleField {
+			name: "caliper"
+			enabled: caliperEnabled.checked
+			label: qsTr("Caliper width")
+			defaultValue: 0.1
+			fieldWidth: 50
+			min: 0
+			max: 1
+			decimals: 5
 		}
 	}
+}
 
 	// Group
 	// {

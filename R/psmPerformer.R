@@ -9,7 +9,7 @@
   df=df[, -8]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance before matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -26,7 +26,7 @@
   df=df[, c("Covariate", colnames(summatch))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance after matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
                  "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -43,7 +43,7 @@
   df=df[, c("Sample", colnames(sumnn))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Sample sizes"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -60,7 +60,7 @@
     ggplot2::theme(legend.position = 'bottom')
   # create jasp graph
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 500)
-  lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula",
+  lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula","caliper",
                          "distance_dropdown","ratio","replacement"))
   lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
   jaspResults[["lovePlot"]]=lovePlot
@@ -170,7 +170,7 @@
   # create JASP plot
   densityPlot = createJaspPlot(title = gettext("Density Plot"), width = 400, height = 500)
 
-  densityPlot$dependOn(c("method_dropdown","treatment","confounders",
+  densityPlot$dependOn(c("method_dropdown","treatment","confounders","caliper",
     "distance_dropdown","ratio","replacement","opacity","customFormula",
     "untreatedColor","treatedColor"))
 
@@ -199,20 +199,31 @@ matching=function(jaspResults,dataset,options){
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='logit'~'logit',
                                   T~'mahalanobis')
-  # caliper
-  if (isTRUE(options$caliperEnabled) && distance_lower %in% c("glm", "logit")) {
-    caliper_null=options$caliper
+  if (isTRUE(options$caliperEnabled)) {
+    caliper_null = options$caliper
+    if (distance_lower %in% c("glm", "logit")) {
+      matching_distance = distance_lower
+      mahvars_formula = NULL
+    } else {
+      # Mahalanobis chosen: estimate a PS (via glm) purely to define the caliper,
+      # but perform the actual matching on Mahalanobis distance over the covariates.
+      matching_distance = "glm"
+      mahvars_formula = f[-2]
+    }
   } else {
-    caliper_null=NULL
+    caliper_null = NULL
+    mahvars_formula = NULL
+    matching_distance = distance_lower  # stays "mahalanobis" for plain matching when no caliper is used
   }
-  # run matching
-  matched=MatchIt::matchit(formula=f,
-                           data=dataset,
-                           caliper=caliper_null,
-                           ratio=options$ratio,
-                           replace=options$replacement,
-                           distance=distance_lower,
-                           method=str_to_lower(options$method_dropdown))
+
+  matched = MatchIt::matchit(formula = f,
+                             data = dataset,
+                             distance = matching_distance,
+                             mahvars = mahvars_formula,
+                             caliper = caliper_null,
+                             ratio = options$ratio,
+                             replace = options$replacement,
+                             method = str_to_lower(options$method_dropdown))
   #tables
   ## before
   .createSummaryTableBefore(jaspResults, matched, options)
