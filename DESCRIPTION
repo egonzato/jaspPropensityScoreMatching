@@ -16,6 +16,7 @@ Imports:
   ggplot2,
   stringr,
   cowplot,
+  gridExtra,
   cobalt,
   optmatch,
   splines,

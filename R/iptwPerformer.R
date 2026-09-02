@@ -24,9 +24,8 @@
   if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
   treatment = model$treatment
   # add treatment column to dataset with factor format
-  dataw$treatment_label=factor(dataw[[treatment]],
-                               levels = c(0, 1),
-                               labels = c("Untreated", "Treated"))
+  dataw$treatment_label = as.factor(dataw[[treatment]])
+  levels(dataw$treatment_label) = c("Untreated", "Treated")
   # plot weights by treatment
   p=ggplot2::ggplot(dataw, aes(x = weight, fill = treatment_label, color = treatment_label))+
     ggplot2::geom_density(alpha=options$opacity)+
@@ -36,13 +35,16 @@
                                labels = c("Untreated", "Treated")) +
     ggplot2::labs(x = "Weights", y = "Density", fill = "Treatment") +
     ggplot2::guides(col='none')+
-    ggplot2::theme_bw() +
-    ggplot2::theme(legend.position = "bottom")
+    ggplot2::theme_bw()
+  # add grob
+  p_nolegend = p + ggplot2::theme(legend.position = "none")
+  legend_grob = cowplot::get_legend(p + ggplot2::theme(legend.position = "bottom"))
+  final = gridExtra::arrangeGrob(p_nolegend, legend_grob, ncol = 1, heights = c(10, 1))
   # create JASP plot
   weightPlot=createJaspPlot(title = "Weight Densities", width = 400, height = 300)
   weightPlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "customFormula",
                         "opacity", "untreatedColor", "treatedColor"))
-  weightPlot$plotObject=p
+  weightPlot$plotObject=final
   jaspResults[["weightDensities"]]=weightPlot
 }
 # love plot
@@ -53,21 +55,20 @@
   f = model$formula
   w = dataset$weight
   # calculate standardized means for both groups and plot with ggplot
-  loveplot=cobalt::love.plot(data=dataset,
-                             x=f,
-                             weights=w,
-                             binary="std",
-                             un=TRUE,
-                             s.d.denom="pooled")+
-    ggplot2::theme_bw() +
+  loveplot=cobalt::love.plot(data=dataset, x=f, weights=w,
+                             binary="std", un=TRUE, s.d.denom="pooled") +
     ggplot2::scale_color_manual(values = c(options$untreatedColor, options$treatedColor)) +
-    ggplot2::geom_vline(xintercept = c(-0.1, 0.1), lty = 2, col = "black") +
-    ggplot2::theme(legend.position = "bottom")
+    ggplot2::theme_bw() +
+    ggplot2::geom_vline(xintercept = c(-0.1, 0.1), lty = 2, col = "black")
+  # add grob
+  p_nolegend = loveplot + ggplot2::theme(legend.position = "none")
+  legend_grob = cowplot::get_legend(loveplot + ggplot2::theme(legend.position = "bottom"))
+  final = gridExtra::arrangeGrob(p_nolegend, legend_grob, ncol = 1, heights = c(10, 1))
   # create JASP plot
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 400)
   lovePlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled","customFormula",
                       "truncate", "untreatedColor", "treatedColor"))
-  lovePlot$plotObject=loveplot
+  lovePlot$plotObject=final
   jaspResults[["iptwLovePlot"]]=lovePlot
 }
 # propensity score overlap plot
@@ -93,12 +94,15 @@
     ggplot2::labs(x="Propensity Score",
                   y="Density",
                   fill="Treatment") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(legend.position="bottom")
+    ggplot2::theme_bw()
+  # add grob
+  p_nolegend = p + ggplot2::theme(legend.position = "none")
+  legend_grob = cowplot::get_legend(p + ggplot2::theme(legend.position = "bottom"))
+  final = gridExtra::arrangeGrob(p_nolegend, legend_grob, ncol = 1, heights = c(10, 1))
   # create JASP plot
   psPlot=createJaspPlot(title=gettext("Propensity Score Overlap"), width = 400, height = 300)
   psPlot$dependOn(c("treatment", "confounders", "customFormula","opacity", "untreatedColor", "treatedColor"))
-  psPlot$plotObject=p
+  psPlot$plotObject=final
   jaspResults[["psOverlapPlot"]]=psPlot
 }
 # weight summary table
